@@ -11,11 +11,8 @@ const Profile = (props) => {
         post_name: '',
         post_content: ''
     });
-
     const { post_name, post_content } = post;
-
     const onChange = (e) => setPost({ ...post, [e.target.name]: e.target.value })
-
     const onSubmit = (e) => {
         e.preventDefault();
         console.log('submitted');
@@ -30,6 +27,10 @@ const Profile = (props) => {
             .then((data) => {
                 if (!data.message) {
                     console.log(data)
+                    setPost({
+                        post_name: '',
+                        post_content: ''
+                    });
                     fetchData("/post/viewpost",
                         {
                             user_id
@@ -52,10 +53,42 @@ const Profile = (props) => {
 
     }
 
-    let posts = [];
+    const deletePost = async (e,cont) => {
+        e.preventDefault();
+        console.log('delete', cont);
+        const user_id = location.state.name;
+        fetchData("/post/deletepost",
+            {
+                id: cont._id
+            },
+            "DELETE")
+            .then((data) => {
+                if (!data.message) {
+                    console.log(data)
+                    fetchData("/post/viewpost",
+                        {
+                            user_id
+                        },
+                        "POST")
+                        .then((res) => {
+                            console.log(res);
+                            if (!res.message) {
+                                navigate("/profile", { state: { name: user_id, data: res } });
+                            }
+                        })
+                        .catch((error) => {
+                            console.log(error)
+                        })
+                }
+            })
+            .catch((error) => {
+                console.log(error)
+            })
+    }
 
+    let posts = [];
     for (let i = 0; i < Object.keys(location.state.data).length; i++) {
-        posts.push({ post_name: location.state.data[i].post_name, post_content: location.state.data[i].post_content });
+        posts.push({ _id: location.state.data[i]._id, post_name: location.state.data[i].post_name, post_content: location.state.data[i].post_content });
     }
 
     return (
@@ -69,6 +102,7 @@ const Profile = (props) => {
                     <tr>
                         <th scope="col">Post Name</th>
                         <th scope="col">Post Content</th>
+                        <th scope="col">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -76,6 +110,7 @@ const Profile = (props) => {
                         <tr>
                             <th scope="row">{cont.post_name}</th>
                             <td>{cont.post_content}</td>
+                            <td><button onClick={e=> deletePost(e,cont)}  className="btn btn-danger btn-sm btn-block">Delete</button></td>
                         </tr>
                     ))}
                 </tbody>
